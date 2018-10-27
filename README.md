@@ -16,7 +16,7 @@
     composer require predis/predis
 # lock 安装     
     第一步
-    composer require nabao/lock
+    composer require nabao/laravel-lock
     第二步
     'providers' => [
         Lock\LockServiceProvider::class,
