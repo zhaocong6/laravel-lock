@@ -15,9 +15,16 @@
 # predis 安装
     composer require predis/predis
 # lock 安装     
+    第一步
     composer require nabao/lock
+    第二步
+    'providers' => [
+        Lock\LockServiceProvider::class,
+    ]
+    第三步
+    php artisan vendor:publish --provider="Lock\LockServiceProvider"
 # 抢占锁
-## lock(callable $callback, string $lock_val, int $expiration = 60)
+## lock(callable $callback, string $lock_val)
 多进程并发时, 其中某一个进程得到锁后, 其他进程将被拒绝
     
     
@@ -25,12 +32,10 @@
                 回调函数, 可返回值
     $lock_val
                 锁定值
-    $expiration
-                进程最大执行时间   
        
 # 队列锁
 
-## queueLock($closure, $lock_val, $max_queue_process = 100, $expiration = 60) 
+## queueLock($closure, $lock_val, $max_queue_process = 100) 
 多进程并发时, 其中某一个进程得到锁后, 其他进程将等待解锁(配置最大等待进程后, 超过等待数量后进程将被拒绝)
 
     $callback  
@@ -39,8 +44,6 @@
                     锁定值
     $max_queue_process        
                     队列最大等待进程        
-    $expiration
-                    进程最大执行时间   
 
 # 使用
     
@@ -58,7 +61,6 @@
     }, $lock_val);
     
 # config配置
-## 目前兼容tp.其它框架请实例化传参
 
      /*
         |--------------------------------------------------------------------------
@@ -76,15 +78,17 @@
         |   expiration         锁值过期时间
         |
         */
-        'lock'=>[
-            'drive' =>  'redis',
-            'redis' =>  [
-                'host'  =>  '127.0.0.1',
-                'port'  =>  '6379'
-            ],
-            'params' => [
-                'max_queue_process' => 100
-                'expiration'        =>  5
-            ]
-        ]
+    'drive' =>  'redis',
+
+    'redis' =>  [
+        'host'                  =>  '127.0.0.1',
+        'port'                  =>  6379,
+        'read_write_timeout'    =>  0,
+        'persistent'            =>  true,
+    ],
+
+    'params' => [
+        'max_queue_process' =>  100,
+        'expiration'        =>  5
+    ]
 # laravel-lock
