@@ -1,0 +1,25 @@
+{
+    "name": "nabao/laravel-lock",
+    "description": "并发抢占锁, 队列锁",
+    "license": "MIT",
+    "type": "library",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "ZhaoCong",
+            "qq":"1140253608",
+            "email": "1140253608@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "predis/predis": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lock\\": "src/",
+            "Lock\\Lock\\": "src/Lock",
+            "Lock\\Factory\\": "src/Factory"
+        }
+    }
+}
