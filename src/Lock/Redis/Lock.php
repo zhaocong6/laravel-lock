@@ -304,11 +304,6 @@ LUA;
     {
         $config = empty($config) ? [] : $config;
 
-        $config = array_merge([
-            'read_write_timeout'=>  0,
-            'persistent'        =>  true
-        ], $config);
-
         $this->redis = new Client($config);
     }
 
