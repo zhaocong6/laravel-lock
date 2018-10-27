@@ -1,6 +1,6 @@
 {
     "name": "nabao/laravel-lock",
-    "description": "并发抢占锁, 队列锁",
+    "description": "高性能, 分布式, 并发抢占锁, 队列锁",
     "license": "MIT",
     "type": "library",
     "minimum-stability": "dev",
