@@ -15,13 +15,9 @@
 # predis 安装
     composer require predis/predis
 # lock 安装     
-    第一步
+    第一步, 安装alravel-lock
     composer require nabao/laravel-lock
-    第二步
-    'providers' => [
-        Lock\LockServiceProvider::class,
-    ]
-    第三步
+    第二步, 生成配置文件
     php artisan vendor:publish --provider="Lock\LockServiceProvider"
 # 抢占锁
 ## lock(callable $callback, string $lock_val)
