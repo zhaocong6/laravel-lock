@@ -21,5 +21,12 @@
             "Lock\\Lock\\": "src/Lock",
             "Lock\\Factory\\": "src/Factory"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Lock\\LockServiceProvider"
+            ]
+        }
     }
 }
