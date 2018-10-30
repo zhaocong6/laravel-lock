@@ -77,6 +77,8 @@ class Lock implements LockInterface
 
                 $this->delLock($current_data);
 
+                $this->addQueueLockList($current_data);
+
                 unset($this->locks[$current_index]);
 
                 return $closure_res;

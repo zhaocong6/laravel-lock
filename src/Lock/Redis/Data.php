@@ -64,7 +64,7 @@ class Data
      * 队列锁前缀
      * @var string
      */
-    public $queue_lock_prefix = 'queue:lock';
+    public $queue_lock_prefix = 'lock';
 
     /**
      * 队列锁进程数名称
@@ -112,6 +112,8 @@ class Data
         $this->randNum();
 
         $this->setLockName();
+
+        $this->setQueueLockListName();
     }
 
     /**
