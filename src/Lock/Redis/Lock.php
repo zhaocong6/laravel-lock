@@ -150,6 +150,8 @@ class Lock implements LockInterface
      */
     public function isActionAllowed($key, $period, $max_count)
     {
+        $key = 'actionAllowed:'.$key;
+
         $msec_time = $this->getMsecTime();
 
         list(,,$count) = $this->redis->pipeline(function ($pipe)use ($key, $msec_time, $period){
