@@ -141,6 +141,34 @@ class Lock implements LockInterface
     }
 
     /**
+     * 简单限流
+     * 作者地址: https://juejin.im/book/5afc2e5f6fb9a07a9b362527/section/5b4477416fb9a04fa259c496
+     * @param $key
+     * @param $period
+     * @param $max_count
+     * @return bool
+     */
+    public function isActionAllowed($key, $period, $max_count)
+    {
+        $msec_time = $this->getMsecTime();
+
+        list(,,$count) = $this->redis->pipeline(function ($pipe)use ($key, $msec_time, $period){
+
+            $pipe->zadd($key, $msec_time, $msec_time);
+
+            $pipe->zremrangebyscore($key, 0, $msec_time - $period * 1000);
+
+            $count = $pipe->zcard($key);
+
+            $pipe->expire($key, $period + 1);
+
+            return $count;
+        });
+
+        return $count <= $max_count;
+    }
+
+    /**
      * 初始化等待锁的进程数量
      *
      * @param Data $data
@@ -428,6 +456,17 @@ LUA;
         }
 
         $this->lock_keys[$lock_val] = true;
+    }
+
+    /**
+     * 获取毫秒时间
+     * @return int
+     */
+    private function getMsecTime()
+    {
+        list($msec, $sec) = explode(' ', microtime());
+        $msec_time =  (float)sprintf('%.0f', (floatval($msec) + floatval($sec)) * 1000);
+        return (int)explode('.', $msec_time)[0];
     }
 
     /**
