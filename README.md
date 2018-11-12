@@ -56,6 +56,14 @@
         echo 'hello world!';
     }, $lock_val);
     
+# 限流
+
+## isActionAllowed($key, $period, $max_count)
+    
+    $key        限制key
+    $period     限制时间(秒)
+    $max_count  限制时间内最大数量
+    
 # config配置
 
      /*
