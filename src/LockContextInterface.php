@@ -13,6 +13,7 @@ namespace Lock;
  *
  * @method $this lock(Callback $closure, $lock_val)
  * @method $this queueLock(Callback $closure, $lock_val, $max_queue_process = 100, $timeout = 60)
+ * @method $this isActionAllowed($key, $period, $max_count)
  *
  * @author zhaocong <1140253608@qq.com>
  */
