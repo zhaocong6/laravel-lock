@@ -67,28 +67,45 @@ class Lock implements LockInterface
     public function lock($closure, $lock_val)
     {
         $this->pushLockKey($lock_val);
-
         list($current_data, $current_index) = $this->bootLock($lock_val);
 
         if ($this->redis->set($current_data->lock_name, $current_data->rand_num, 'nx', 'ex', $current_data->expiration)) {
-
             try{
                 $closure_res = $closure($this->redis);
-
                 $this->delLock($current_data);
-
                 $this->addQueueLockList($current_data);
-
                 unset($this->locks[$current_index]);
-
                 return $closure_res;
             }catch (\Error $exception){
                 $this->forcedShutdown();
             }
-
         }else{
             throw new LockException('操作频繁, 被服务器拒绝!', 403);
         }
+    }
+
+    /**
+     * 多参数抢占锁
+     * @param $closure
+     * @param $lock_vals
+     * @return mixed
+     */
+    public function locks($closure, $lock_vals)
+    {
+        $one_lock_val = array_pop($lock_vals);
+        $one_closure = function ()use ($closure, $one_lock_val){
+            return $this->lock($closure, $one_lock_val);
+        };
+
+        $go = array_reduce($lock_vals, function ($next, $lock_val)use ($one_closure){
+            return function ()use ($next, $lock_val, $one_closure){
+                return is_null($next)
+                    ? $this->lock($one_closure, $lock_val)
+                    : $this->lock($next, $lock_val);
+            };
+        });
+
+        return $go();
     }
 
     /**
@@ -104,13 +121,9 @@ class Lock implements LockInterface
     public function queueLock($closure, $lock_val, $max_queue_process = null, $wait_timeout = 6)
     {
         $this->pushQueueLockKey($lock_val);
-
         list($current_data, $current_index) = $this->bootQueueLock($lock_val, $max_queue_process, $wait_timeout);
-
         $this->initQueueLockProcess($current_data);
-
         $queue_lock_list_name = $this->initQueueLockList($current_data);
-
         $this->addQueueLockProcess($current_data);
 
         loop:
@@ -121,24 +134,44 @@ class Lock implements LockInterface
 
             try{
                 $closure_res = $closure($this->redis);
-
                 $this->delQueueLockProcess($current_data);
-
                 $this->delQueueLock($current_data);
-
                 $this->addQueueLockList($current_data);
-
                 unset($this->queue_locks[$current_index]);
-
                 return $closure_res;
             }catch (\Error $exception){
                 $this->forcedShutdown();
             }
-
         }else{
             goto loop;
         }
     }
+
+    /**
+     * 多参数队列锁
+     * @param $closure
+     * @param $lock_vals
+     * @param null $max_queue_process
+     * @param int $wait_timeout
+     * @return mixed
+     */
+    public function queueLocks($closure, $lock_vals, $max_queue_process = null, $wait_timeout = 6)
+    {
+        $one_lock_val = array_pop($lock_vals);
+        $one_closure = function ()use ($closure, $one_lock_val, $max_queue_process, $wait_timeout){
+            return $this->queueLock($closure, $one_lock_val, $max_queue_process, $wait_timeout);
+        };
+
+        $go = array_reduce($lock_vals, function ($next, $lock_val)use ($one_closure, $max_queue_process, $wait_timeout){
+            return function ()use ($next, $lock_val, $one_closure, $max_queue_process, $wait_timeout){
+                return is_null($next)
+                    ? $this->queueLock($one_closure, $lock_val, $max_queue_process, $wait_timeout)
+                    : $this->queueLock($next, $lock_val, $max_queue_process, $wait_timeout);
+            };
+        });
+        return $go();
+    }
+
 
     /**
      * 简单限流
