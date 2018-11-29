@@ -14,6 +14,16 @@ use Predis\Client;
 
 class Lock implements LockInterface
 {
+    //异常代码
+    const PARAMS_ERROR_CODE = 400;
+    const TOO_MANY_REQUESTS_ERROR_CODE = 429;
+    const TIME_OUT_ERROR_CODE = 504;
+
+    //异常信息
+    const TIME_OUT_ERROR_MSG = '等待超时';
+    const EXISTED_ERROR_MSG = 'lock_val重复';
+    const TOO_MANY_REQUESTS_ERROR_MSG = '访问频繁';
+
     /**
      * 缓存redis
      * @var resource
@@ -80,7 +90,7 @@ class Lock implements LockInterface
                 $this->forcedShutdown();
             }
         }else{
-            throw new LockException('操作频繁, 被服务器拒绝!', 403);
+            throw new LockException(self::TOO_MANY_REQUESTS_ERROR_MSG, self::TOO_MANY_REQUESTS_ERROR_CODE);
         }
     }
 
@@ -97,13 +107,15 @@ class Lock implements LockInterface
             return $this->lock($closure, $one_lock_val);
         };
 
-        $go = array_reduce($lock_vals, function ($next, $lock_val)use ($one_closure){
-            return function ()use ($next, $lock_val, $one_closure){
-                return is_null($next)
-                    ? $this->lock($one_closure, $lock_val)
-                    : $this->lock($next, $lock_val);
-            };
-        });
+        $go = empty($lock_vals)
+            ? $one_closure
+            : array_reduce($lock_vals, function ($next, $lock_val)use ($one_closure){
+                return function ()use ($next, $lock_val, $one_closure){
+                    return is_null($next)
+                        ? $this->lock($one_closure, $lock_val)
+                        : $this->lock($next, $lock_val);
+                };
+            });
 
         return $go();
     }
@@ -128,7 +140,7 @@ class Lock implements LockInterface
 
         loop:
         $wait = $this->redis->blpop($queue_lock_list_name, $wait_timeout);
-        if (is_null($wait)) throw new LockException('等待超时!', 504);
+        if (is_null($wait)) throw new LockException(self::TIME_OUT_ERROR_MSG, self::TIME_OUT_ERROR_CODE);
 
         if ($this->redis->set($current_data->queue_lock_name, $current_data->rand_num, 'nx', 'ex', $current_data->expiration)) {
 
@@ -162,13 +174,15 @@ class Lock implements LockInterface
             return $this->queueLock($closure, $one_lock_val, $max_queue_process, $wait_timeout);
         };
 
-        $go = array_reduce($lock_vals, function ($next, $lock_val)use ($one_closure, $max_queue_process, $wait_timeout){
-            return function ()use ($next, $lock_val, $one_closure, $max_queue_process, $wait_timeout){
-                return is_null($next)
-                    ? $this->queueLock($one_closure, $lock_val, $max_queue_process, $wait_timeout)
-                    : $this->queueLock($next, $lock_val, $max_queue_process, $wait_timeout);
-            };
-        });
+        $go = empty($lock_vals)
+            ? $one_closure
+            : array_reduce($lock_vals, function ($next, $lock_val)use ($one_closure, $max_queue_process, $wait_timeout){
+                return function ()use ($next, $lock_val, $one_closure, $max_queue_process, $wait_timeout){
+                    return is_null($next)
+                        ? $this->queueLock($one_closure, $lock_val, $max_queue_process, $wait_timeout)
+                        : $this->queueLock($next, $lock_val, $max_queue_process, $wait_timeout);
+                };
+            });
         return $go();
     }
 
@@ -188,15 +202,10 @@ class Lock implements LockInterface
         $msec_time = $this->getMsecTime();
 
         list(,,$count) = $this->redis->pipeline(function ($pipe)use ($key, $msec_time, $period){
-
             $pipe->zadd($key, $msec_time, $msec_time);
-
             $pipe->zremrangebyscore($key, 0, $msec_time - $period * 1000);
-
             $count = $pipe->zcard($key);
-
             $pipe->expire($key, $period + 1);
-
             return $count;
         });
 
@@ -277,7 +286,7 @@ LUA;
 
         if (!$this->redis->eval($lua, 1, $data->queue_lock_process_name, $data->max_queue_process, $data->expiration)){
             $data->is_del_queue_lock_process = false;
-            throw new LockException('操作频繁, 被服务器拒绝!', 403);
+            throw new LockException(self::TOO_MANY_REQUESTS_ERROR_MSG, self::TOO_MANY_REQUESTS_ERROR_CODE);
         }
     }
 
@@ -471,7 +480,7 @@ LUA;
     {
         if (isset($this->queue_lock_keys[$lock_val])){
 
-            throw new LockException('lock_val重复!', 400);
+            throw new LockException(self::EXISTED_ERROR_MSG, self::PARAMS_ERROR_CODE);
         }
 
         $this->queue_lock_keys[$lock_val] = true;
@@ -487,7 +496,7 @@ LUA;
     {
         if (isset($this->lock_keys[$lock_val])){
 
-            throw new LockException('lock_val重复!', 400);
+            throw new LockException(self::EXISTED_ERROR_MSG, self::PARAMS_ERROR_CODE);
         }
 
         $this->lock_keys[$lock_val] = true;
