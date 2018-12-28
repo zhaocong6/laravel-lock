@@ -11,6 +11,8 @@ namespace Lock\Lock\Redis;
 use Lock\LockInterface;
 use Lock\LockException;
 use Predis\Client;
+use Illuminate\Support\Facades\Redis;
+
 
 class Lock implements LockInterface
 {
@@ -378,7 +380,7 @@ LUA;
     {
         $config = empty($config) ? [] : $config;
 
-        $this->redis = new Client($config);
+        $this->redis = PHP_SAPI === 'fpm-fcgi' ? Redis::connection() : new Client($config);
     }
 
     /**
