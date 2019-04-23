@@ -97,6 +97,17 @@ class Data
     public $rand_num;
 
     /**
+     * Data constructor.
+     * @param $params
+     */
+    public function __construct($params)
+    {
+        foreach ($params as $key=>$value){
+            $this->$key = $value;
+        }
+    }
+
+    /**
      * 初始化lock数据
      *
      * @param $lock_val

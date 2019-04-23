@@ -438,7 +438,11 @@ LUA;
      */
     private function bootLock($lock_val)
     {
-        $data = new Data();
+        $data = new Data(
+            [
+                'expiration'=>$this->expiration
+            ]
+        );
 
         $data->bootLock($lock_val);
 
@@ -459,7 +463,11 @@ LUA;
      */
     private function bootQueueLock($lock_val, $max_queue_process = null, $wait_timeout = 6)
     {
-        $data = new Data();
+        $data = new Data(
+            [
+                'expiration'=>$this->expiration
+            ]
+        );
 
         $data->bootQueueLock($lock_val, $max_queue_process, $wait_timeout);
 
