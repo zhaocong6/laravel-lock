@@ -62,6 +62,7 @@ class Lock implements LockInterface
     public function __construct($config = [], $params = [])
     {
         $this->shutdown();
+        $this->bootSignals();
         $this->initRedis($config);
         $this->initParams($params);
     }
@@ -519,6 +520,26 @@ LUA;
         list($msec, $sec) = explode(' ', microtime());
         $msec_time =  (float)sprintf('%.0f', (floatval($msec) + floatval($sec)) * 1000);
         return (int)explode('.', $msec_time)[0];
+    }
+
+    /**
+     * 注册信号
+     */
+    private function bootSignals()
+    {
+        pcntl_async_signals(true);
+
+        pcntl_signal(SIGINT, function(){
+            $this->forcedShutdown();
+        });
+
+        pcntl_signal(SIGHUP, function(){
+            $this->forcedShutdown();
+        });
+
+        pcntl_signal(SIGTERM, function(){
+            $this->forcedShutdown();
+        });
     }
 
     /**
