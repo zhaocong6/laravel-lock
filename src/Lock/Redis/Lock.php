@@ -89,6 +89,10 @@ class Lock implements LockInterface
                 return $closure_res;
             }catch (\Error $exception){
                 $this->forcedShutdown();
+                throw $exception;
+            }catch (\Exception $exception){
+                $this->forcedShutdown();
+                throw $exception;
             }
         }else{
             throw new LockException(self::TOO_MANY_REQUESTS_ERROR_MSG, self::TOO_MANY_REQUESTS_ERROR_CODE);
@@ -154,6 +158,10 @@ class Lock implements LockInterface
                 return $closure_res;
             }catch (\Error $exception){
                 $this->forcedShutdown();
+                throw $exception;
+            }catch (\Exception $exception){
+                $this->forcedShutdown();
+                throw $exception;
             }
         }else{
             goto loop;
