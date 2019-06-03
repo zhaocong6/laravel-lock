@@ -84,7 +84,6 @@ class Lock implements LockInterface
             try{
                 $closure_res = $closure($this->redis);
                 $this->delLock($current_data);
-                $this->addQueueLockList($current_data);
                 unset($this->locks[$current_index]);
                 return $closure_res;
             }catch (\Error $exception){
